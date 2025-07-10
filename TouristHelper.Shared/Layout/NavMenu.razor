@@ -1,0 +1,43 @@
+﻿@inject IJSRuntime JS
+
+<div class="sidebar-header">
+    <h1 class="logo">Let's Travel</h1>
+</div>
+
+<nav class="nav-links">
+    @if (!string.IsNullOrEmpty(Greeting))
+    {
+        <p class="greeting">@Greeting</p>
+    }
+
+    <a href="/" class="nav-item">🏠 Dashboard</a>
+    <a href="/explore" class="nav-item">🗺️ Destination Booking</a>
+    <a href="/booking/hotels" class="nav-item">🏨 Hotel Booking</a>
+    <a href="/booking/travel" class="nav-item">🚗 Ride Services</a>
+    <a href="/chat" class="nav-item">💬 Chat</a>
+    <a href="/profile" class="nav-item">👤 My Profile</a>
+    <a href="/login" class="nav-item">🔑 Login</a>
+    <a href="/register" class="nav-item">📝 Sign Up</a>
+    <a href="/logout" class="nav-item logout">🚪 Logout</a>
+</nav>
+
+@code {
+    private string Greeting = "Hello, Guest!";
+
+    protected override async Task OnInitializedAsync()
+    {
+        try
+        {
+            var name = await JS.InvokeAsync<string>("localStorage.getItem", "tourist_name");
+
+            if (!string.IsNullOrWhiteSpace(name))
+            {
+                Greeting = $"Hi, {name}!";
+            }
+        }
+        catch
+        {
+            Greeting = "Hello, Guest!";
+        }
+    }
+}

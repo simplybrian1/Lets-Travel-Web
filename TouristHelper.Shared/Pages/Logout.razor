@@ -1,0 +1,70 @@
+﻿@page "/logout"
+@inject HttpClient Http
+@using Microsoft.AspNetCore.Components.Authorization
+@inject NavigationManager Nav
+@inject IJSRuntime JS
+@inject AuthenticationStateProvider AuthProvider
+
+
+
+<PageTitle>Logging Out...</PageTitle>
+
+@if (!string.IsNullOrEmpty(Message))
+{
+    <div class="p-3 mb-4 rounded text-white bg-red-600">
+        @Message
+    </div>
+}
+
+@code {
+    private string Message = "";
+
+    protected override async Task OnInitializedAsync()
+    {
+        try
+        {
+            var token = await JS.InvokeAsync<string>("localStorage.getItem", "jwt_token");
+
+            if (!string.IsNullOrWhiteSpace(token))
+            {
+                var request = new HttpRequestMessage(HttpMethod.Post, "api/tourist/logout");
+                request.Headers.Add("Authorization", $"Bearer {token}");
+
+                var response = await Http.SendAsync(request);
+                var result = await response.Content.ReadFromJsonAsync<ApiResponse>();
+
+                Message = result?.message ?? "Logged out.";
+
+                // 🧹 Clear localStorage
+                await JS.InvokeVoidAsync("localStorage.removeItem", "jwt_token");
+                await JS.InvokeVoidAsync("localStorage.removeItem", "tourist_id");
+                await JS.InvokeVoidAsync("localStorage.removeItem", "tourist_name");
+
+                // ✅ Notify authentication state provider
+                if (AuthProvider is TouristHelper.Shared.Services.JwtAuthStateProvider jwtProvider)
+                {
+                    jwtProvider.NotifyUserLogout();
+                }
+
+                await Task.Delay(1500);
+                Nav.NavigateTo("/");
+            }
+            else
+            {
+                Message = "You are already logged out.";
+                await Task.Delay(1000);
+                Nav.NavigateTo("/");
+            }
+        }
+        catch (Exception ex)
+        {
+            Message = $"Logout error: {ex.Message}";
+        }
+    }
+
+    private class ApiResponse
+    {
+        public bool success { get; set; }
+        public string message { get; set; } = "";
+    }
+}

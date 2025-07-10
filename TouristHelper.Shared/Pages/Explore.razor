@@ -1,0 +1,228 @@
+﻿@page "/explore"
+@using System.Net.Http.Json
+@inject HttpClient Http
+@inject NavigationManager Nav
+
+<PageTitle>Explore - Let's Travel</PageTitle>
+<style>
+    .explore-section {
+        text-align: center;
+        padding: 4rem 2rem;
+        background: #f9fafb;
+    }
+
+        .explore-section h2 {
+            font-size: 2.5rem;
+            font-weight: 700;
+            margin-bottom: 1rem;
+            color: #1f2937; /* gray-800 */
+        }
+
+        .explore-section p {
+            font-size: 1.1rem;
+            margin-bottom: 2rem;
+            color: #374151; /* gray-700 */
+        }
+
+    .tour-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+        gap: 2rem;
+        margin: 2rem auto;
+        max-width: 1200px;
+    }
+
+    .tour-card {
+        background: #ffffff;
+        border-radius: 12px;
+        box-shadow: 0 8px 20px rgba(0,0,0,0.03);
+        padding: 1.5rem;
+        text-align: left;
+        display: flex;
+        flex-direction: column;
+        justify-content: space-between;
+        transition: transform 0.2s ease, box-shadow 0.2s ease;
+    }
+
+        .tour-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 12px 24px rgba(0,0,0,0.05);
+        }
+
+    .tour-img {
+        width: 100%;
+        height: 180px;
+        object-fit: cover;
+        border-radius: 8px;
+        margin-bottom: 1rem;
+    }
+
+    .tour-card h4 {
+        font-size: 1.3rem;
+        font-weight: 600;
+        color: #0f766e; /* teal accent */
+        margin-bottom: 0.5rem;
+    }
+
+    .tour-card p {
+        font-size: 0.95rem;
+        color: #374151; /* gray-700 */
+        line-height: 1.5;
+        margin-bottom: 0.5rem;
+    }
+
+    .book-btn {
+        align-self: start;
+        padding: 0.5rem 1.5rem;
+        font-size: 0.95rem;
+        color: #ffffff;
+        background: #0f766e; /* teal */
+        border: none;
+        border-radius: 9999px;
+        cursor: pointer;
+        transition: background 0.2s ease;
+    }
+
+        .book-btn:hover {
+            background: #0d9488; /* deeper teal on hover */
+        }
+
+    .featured-badge {
+        background: gold;
+        color: #1f2937; /* dark gray for contrast */
+        font-size: 0.75rem;
+        font-weight: bold;
+        padding: 0.3rem 0.6rem;
+        border-radius: 20px;
+        display: inline-block;
+        margin-bottom: 0.5rem;
+    }
+</style>
+
+
+<div class="explore-section">
+    <h2>Explore Destinations</h2>
+    <p>Discover amazing destinations and tour activities. Select your preferred experiences.</p>
+
+    @if (IsLoading)
+    {
+        <p>Loading tours...</p>
+    }
+    else if (Tours.Any())
+    {
+        <div class="tour-grid">
+            @foreach (var tour in Tours)
+            {
+                <div class="tour-card">
+                    @if (tour.is_featured)
+                    {
+                        <div class="featured-badge">★ Featured</div>
+                    }
+                    <img class="tour-img" src="@tour.image_url" alt="@tour.name" />
+                    <h4>@tour.name</h4>
+                    <p>@tour.description</p>
+                    <p><strong>Adults:</strong> KES @tour.price_per_adult.ToString("N0")</p>
+                    <p><strong>Children:</strong> KES @tour.price_per_child.ToString("N0")</p>
+                    <p><strong>Duration:</strong> @tour.duration_days day(s)</p>
+                    <button class="book-btn" @onclick="@(() => GoToBooking(tour.tour_id))">
+                        <span>Book Tour</span>
+                    </button>
+
+
+                </div>
+            }
+        </div>
+    }
+    else
+    {
+        <p>No tours available at the moment.</p>
+    }
+</div>
+@code {
+    private List<TourDto> Tours = new();
+    private bool IsLoading = true;
+    private int? BookingInProgressTourId = null;
+    private void GoToBooking(int tourId)
+    {
+        Nav.NavigateTo($"/booking/tour/{tourId}");
+    }
+
+
+    protected override async Task OnInitializedAsync()
+    {
+        try
+        {
+            Tours = await Http.GetFromJsonAsync<List<TourDto>>("api/tours/list") ?? new List<TourDto>();
+        }
+        catch (Exception ex)
+        {
+            Console.Error.WriteLine("Failed to load tours: " + ex.Message);
+        }
+
+        IsLoading = false;
+    }
+
+    private async Task StartBooking(int tourId)
+    {
+        BookingInProgressTourId = tourId;
+
+        // Replace with real form/modal data later
+        int adults = 2;
+        int children = 1;
+
+        var bookingPayload = new
+        {
+            TourId = tourId,
+            Adults = adults,
+            Children = children
+        };
+
+        try
+        {
+            var response = await Http.PostAsJsonAsync("api/tours/book", bookingPayload);
+
+            if (response.IsSuccessStatusCode)
+            {
+                var result = await response.Content.ReadFromJsonAsync<BookingResponse>();
+                if (result?.success == true)
+                {
+                    Nav.NavigateTo($"/booking/confirmation/{result.bookingId}");
+                }
+                else
+                {
+                    Console.Error.WriteLine("❌ Booking failed: " + result?.message);
+                }
+            }
+            else
+            {
+                var errorText = await response.Content.ReadAsStringAsync();
+                Console.Error.WriteLine("❌ Booking API error: " + errorText);
+            }
+        }
+        catch (Exception ex)
+        {
+            Console.Error.WriteLine("❌ Exception while booking: " + ex.Message);
+        }
+
+        BookingInProgressTourId = null;
+    }
+
+    public class BookingResponse
+    {
+        public bool success { get; set; }
+        public string message { get; set; } = "";
+        public int bookingId { get; set; }
+    }
+
+    public class TourDto
+    {
+        public int tour_id { get; set; }
+        public string name { get; set; } = "";
+        public string description { get; set; } = "";
+        public string image_url { get; set; } = "";
+        public decimal price_per_adult { get; set; }
+        public decimal price_per_child { get; set; }
+        public int duration_days { get; set; }
+        public bool is_featured { get; set; }
+    }
+}

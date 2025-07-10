@@ -1,0 +1,233 @@
+﻿@page "/booking/travel"
+@inject HttpClient Http
+@inject NavigationManager Nav
+@inject IJSRuntime JS
+@using System.Text.Json.Serialization
+
+<PageTitle>Book a Ride</PageTitle>
+
+<style>
+    .ride-form {
+        max-width: 600px;
+        margin: 3rem auto;
+        background: #ffffff;
+        border-radius: 12px;
+        box-shadow: 0 8px 20px rgba(0, 0, 0, 0.04);
+        padding: 2rem;
+    }
+
+        .ride-form h2 {
+            font-size: 2rem;
+            font-weight: 700;
+            color: #0f766e;
+            margin-bottom: 1.5rem;
+            text-align: center;
+        }
+
+    .form-group {
+        margin-bottom: 1.25rem;
+    }
+
+        .form-group label {
+            display: block;
+            font-weight: 600;
+            color: #374151; /* gray-700 */
+            margin-bottom: 0.5rem;
+        }
+
+        .form-group input,
+        .form-group select,
+        .form-group textarea {
+            width: 100%;
+            border: 1px solid #d1d5db; /* gray-300 */
+            border-radius: 8px;
+            padding: 0.6rem 0.9rem;
+            font-size: 0.95rem;
+        }
+
+            .form-group input:focus,
+            .form-group select:focus,
+            .form-group textarea:focus {
+                outline: none;
+                border-color: #0f766e;
+                box-shadow: 0 0 0 2px rgba(13, 148, 136, 0.2);
+            }
+
+    .location-btn {
+        margin-top: 0.5rem;
+        background: #0f766e;
+        color: #ffffff;
+        border: none;
+        padding: 0.4rem 1rem;
+        border-radius: 9999px;
+        cursor: pointer;
+        font-size: 0.85rem;
+        transition: background 0.2s ease;
+    }
+
+        .location-btn:hover {
+            background: #0d9488;
+        }
+
+    .confirm-btn {
+        display: block;
+        width: 100%;
+        background: #0f766e;
+        color: #ffffff;
+        border: none;
+        padding: 0.75rem 1rem;
+        border-radius: 9999px;
+        font-weight: 600;
+        font-size: 1rem;
+        cursor: pointer;
+        transition: background 0.2s ease;
+    }
+
+        .confirm-btn:hover {
+            background: #0d9488;
+        }
+</style>
+
+<div class="ride-form">
+    <h2>🚖 Book Your Ride</h2>
+
+    <div class="form-group">
+        <label>Pickup Location</label>
+        <input @bind="form.PickupLocation" placeholder="e.g. Westlands, Nairobi" />
+        <button class="location-btn" @onclick="GetMyLocation">
+            📍 Use My Location
+        </button>
+    </div>
+
+    <div class="form-group">
+        <label>Dropoff Location</label>
+        <input @bind="form.DropoffLocation" placeholder="e.g. Jomo Kenyatta Airport" />
+    </div>
+
+    <div class="form-group">
+        <label>Pickup Date & Time</label>
+        <input type="datetime-local" @bind="pickupTime" />
+    </div>
+
+    <div class="form-group">
+        <label>Passengers</label>
+        <input type="number" min="1" @bind="form.PassengerCount" />
+    </div>
+
+    <div class="form-group">
+        <label>Ride Type</label>
+        <select @bind="form.RideType">
+            <option value="">-- Select Ride Type --</option>
+            <option>Standard</option>
+            <option>Premium</option>
+            <option>Shared</option>
+        </select>
+    </div>
+
+    <div class="form-group">
+        <label>Payment Method</label>
+        <select @bind="form.PaymentMethod">
+            <option value="">-- Select Payment Method --</option>
+            <option>Cash</option>
+            <option>Card</option>
+            <option>Mpesa</option>
+        </select>
+    </div>
+
+    <div class="form-group">
+        <label>Notes to Driver</label>
+        <textarea @bind="form.NotesToDriver" placeholder="Any instructions for the driver..."></textarea>
+    </div>
+
+    <button class="confirm-btn" @onclick="BookRide">
+        🚗 Confirm Ride
+    </button>
+</div>
+
+@code {
+    private RideBookingForm form = new();
+    private DateTime? pickupTime;
+
+    private async Task GetMyLocation()
+    {
+        try
+        {
+            var coords = await JS.InvokeAsync<GeoCoords>("getCurrentLocation");
+            form.PickupLocation = $"Lat: {coords.Latitude}, Lon: {coords.Longitude}";
+        }
+        catch (Exception ex)
+        {
+            form.PickupLocation = $"Could not get location: {ex.Message}";
+        }
+    }
+
+    private async Task BookRide()
+    {
+        if (string.IsNullOrWhiteSpace(form.PickupLocation) ||
+            string.IsNullOrWhiteSpace(form.DropoffLocation) ||
+            pickupTime == null)
+        {
+            await JS.InvokeVoidAsync("alert", "Please fill in pickup, dropoff and time.");
+            return;
+        }
+
+        form.PickupTime = pickupTime.Value;
+
+        var touristIdStr = await JS.InvokeAsync<string>("localStorage.getItem", "tourist_id");
+        if (!int.TryParse(touristIdStr, out int touristId))
+        {
+            await JS.InvokeVoidAsync("alert", "❌ Tourist ID missing or invalid. Please log in again.");
+            Nav.NavigateTo("/login");
+            return;
+        }
+
+        form.TouristId = touristId;
+
+        var res = await Http.PostAsJsonAsync("/api/rides/book", form);
+        var result = await res.Content.ReadFromJsonAsync<ApiResult<RideBookingResponse>>();
+
+        if (result?.Success == true && result.Data?.BookingId > 0)
+        {
+            Nav.NavigateTo($"/booking/confirmation/ride/{result.Data.BookingId}");
+        }
+        else
+        {
+            await JS.InvokeVoidAsync("alert", result?.Message ?? "❌ Booking failed.");
+        }
+    }
+
+    public class RideBookingForm
+    {
+        public int TouristId { get; set; }
+        public string PickupLocation { get; set; } = "";
+        public string DropoffLocation { get; set; } = "";
+        public DateTime PickupTime { get; set; }
+        public int PassengerCount { get; set; } = 1;
+        public string? RideType { get; set; }
+        public string? PaymentMethod { get; set; }
+        public string? NotesToDriver { get; set; }
+        public int? CarId { get; set; }
+    }
+
+    public class GeoCoords
+    {
+        public double Latitude { get; set; }
+        public double Longitude { get; set; }
+    }
+
+    public class RideBookingResponse
+    {
+        [JsonPropertyName("ride_booking_id")]
+        public int RideBookingId { get; set; }
+
+        [JsonPropertyName("booking_id")]
+        public int BookingId { get; set; }
+    }
+
+    public class ApiResult<T>
+    {
+        public bool Success { get; set; }
+        public string? Message { get; set; }
+        public T? Data { get; set; }
+    }
+}

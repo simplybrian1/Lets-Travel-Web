@@ -1,0 +1,37 @@
+﻿@page "/booking/confirmation/{bookingId:int}"
+
+@inject NavigationManager Nav
+
+<h3 class="text-green-700 font-bold text-2xl mb-4">✅ Booking Confirmed!</h3>
+
+<div class="bg-white shadow-md rounded p-6 max-w-xl mx-auto">
+    <p class="text-gray-800 mb-3">
+        Your booking has been successfully submitted. A confirmation email and/or WhatsApp message will be sent to you shortly.
+    </p>
+
+    <p class="text-gray-800 mb-3">
+        You may also <strong>view nearby hotel options</strong> or <strong>check other upcoming tours</strong> to enhance your experience.
+    </p>
+
+    <div class="bg-gray-100 p-4 rounded mb-4">
+        <p><strong>📄 Booking ID:</strong> @bookingId</p>
+        <p><strong>📅 Time:</strong> @DateTime.Now.ToString("f")</p>
+    </div>
+
+    <div class="flex flex-col sm:flex-row gap-4 mt-4">
+        <a href="/" class="bg-blue-600 text-white px-4 py-2 rounded text-center hover:bg-blue-700 transition">
+            🏠 Return Home
+        </a>
+        <a href="/booking/hotels" class="bg-green-600 text-white px-4 py-2 rounded text-center hover:bg-green-700 transition">
+            🏨 View Nearby Hotels
+        </a>
+        <a href="/explore" class="bg-purple-600 text-white px-4 py-2 rounded text-center hover:bg-purple-700 transition">
+            🌍 Explore More Tours
+        </a>
+    </div>
+</div>
+
+@code {
+    [Parameter]
+    public int bookingId { get; set; }
+}

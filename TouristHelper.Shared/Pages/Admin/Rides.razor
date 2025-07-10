@@ -1,0 +1,73 @@
+﻿@page "/admin/bookings/rides"
+@inject HttpClient Http
+
+<h2 class="text-2xl font-bold mb-6">🚖 All Ride Bookings</h2>
+
+@if (isLoading)
+{
+    <p>Loading rides...</p>
+}
+else if (bookings == null || bookings.Count == 0)
+{
+    <p>No rides found.</p>
+}
+else
+{
+    <table class="min-w-full border text-sm">
+        <thead>
+            <tr class="bg-gray-200">
+                <th class="border px-3 py-2">Ride ID</th>
+                <th class="border px-3 py-2">Tourist</th>
+                <th class="border px-3 py-2">Pickup</th>
+                <th class="border px-3 py-2">Dropoff</th>
+                <th class="border px-3 py-2">Time</th>
+                <th class="border px-3 py-2">Car</th>
+                <th class="border px-3 py-2">Actions</th>
+            </tr>
+        </thead>
+        <tbody>
+            @foreach (var r in bookings)
+            {
+                <tr>
+                    <td class="border px-3 py-2">@r.RideBookingId</td>
+                    <td class="border px-3 py-2">@r.TouristName</td>
+                    <td class="border px-3 py-2">@r.PickupLocation</td>
+                    <td class="border px-3 py-2">@r.DropoffLocation</td>
+                    <td class="border px-3 py-2">@r.PickupTime.ToString("g")</td>
+                    <td class="border px-3 py-2">@r.CarType ?? "Unassigned"</td>
+                    <td class="border px-3 py-2">
+                        <button class="bg-blue-500 text-white px-3 py-1 rounded">View</button>
+                    </td>
+                </tr>
+            }
+        </tbody>
+    </table>
+}
+
+@code {
+    private List<RideBooking> bookings = new();
+    private bool isLoading = true;
+
+    protected override async Task OnInitializedAsync()
+    {
+        var res = await Http.GetFromJsonAsync<ApiResult<List<RideBooking>>>("/api/admin/rides/list");
+        bookings = res?.Data ?? new();
+        isLoading = false;
+    }
+
+    public class RideBooking
+    {
+        public int RideBookingId { get; set; }
+        public string TouristName { get; set; } = "";
+        public string PickupLocation { get; set; } = "";
+        public string DropoffLocation { get; set; } = "";
+        public DateTime PickupTime { get; set; }
+        public string? CarType { get; set; }
+    }
+
+    public class ApiResult<T>
+    {
+        public bool Success { get; set; }
+        public T? Data { get; set; }
+    }
+}

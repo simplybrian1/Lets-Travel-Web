@@ -1,0 +1,179 @@
+﻿@page "/"
+@using TouristHelper.Shared.Services
+@inject IFormFactor FormFactor
+
+
+<PageTitle>Lets Travel - Homepage</PageTitle>
+<style>
+    /* === HERO === */
+    .hero {
+        background: linear-gradient(135deg, #00c6ff, #f7797d);
+        color: #ffffff;
+        padding: 10rem 2rem;
+        text-align: center;
+    }
+
+        .hero h1 {
+            font-size: 3rem;
+            font-weight: 700;
+            margin-bottom: 1rem;
+            text-shadow: 0 2px 4px rgba(0,0,0,0.2);
+        }
+
+        .hero p {
+            font-size: 1.25rem;
+            opacity: 0.95;
+        }
+
+    /* === BOOKING OPTIONS === */
+    .booking-options {
+        background: #f9fafb;
+        padding: 3rem 1rem;
+        display: flex;
+        justify-content: center;
+        gap: 2rem;
+        flex-wrap: wrap;
+    }
+
+    .booking-box {
+        flex: 1 1 250px;
+        max-width: 300px;
+        margin: 1rem;
+        padding: 2rem;
+        background: #1f2937; /* dark gray */
+        border-radius: 12px;
+        box-shadow: 0 8px 20px rgba(0,0,0,0.05);
+        color: #f9fafb;
+        transition: transform 0.2s ease, box-shadow 0.2s ease;
+    }
+
+        .booking-box:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 12px 25px rgba(0,0,0,0.1);
+        }
+
+        .booking-box h5 {
+            font-size: 1.5rem;
+            font-weight: 600;
+            margin-bottom: 0.75rem;
+        }
+
+        .booking-box p {
+            margin-bottom: 1rem;
+            opacity: 0.9;
+        }
+
+        .booking-box a {
+            font-weight: 500;
+        }
+
+    /* === INFO SECTION === */
+    .info-section {
+        background: #ffffff;
+        color: #374151; /* gray-700 */
+        padding: 5rem 2rem;
+        text-align: center;
+    }
+
+    .section-title {
+        font-size: 2.25rem;
+        font-weight: 700;
+        margin-bottom: 2rem;
+        color: #1f2937; /* gray-800 */
+    }
+
+    .info-columns {
+        display: flex;
+        justify-content: center;
+        gap: 2rem;
+        flex-wrap: wrap;
+        max-width: 1000px;
+        margin: 0 auto;
+    }
+
+    .info-column {
+        flex: 1 1 300px;
+        max-width: 400px;
+        background: #f9fafb;
+        border-radius: 8px;
+        padding: 2rem;
+        box-shadow: 0 4px 12px rgba(0,0,0,0.03);
+    }
+
+        .info-column h5 {
+            font-size: 1.25rem;
+            margin-bottom: 1rem;
+            font-weight: 600;
+            color: #0f766e; /* teal accent */
+        }
+
+        .info-column p {
+            font-size: 1rem;
+            line-height: 1.6;
+        }
+
+    /* === IMAGES & CTA === */
+    .family-img {
+        width: 100%;
+        max-width: 800px;
+        border-radius: 12px;
+        box-shadow: 0 8px 24px rgba(0,0,0,0.1);
+        margin: 3rem auto 0;
+        display: block;
+    }
+
+    /* === BUTTONS === */
+    .booking-box a.btn {
+        border-radius: 9999px;
+        padding: 0.5rem 1.5rem;
+        font-weight: 500;
+    }
+</style>
+
+<div class="hero">
+    
+    <h1>Explore Your Dream Destinations Today</h1>
+    
+    <p>We simplify travel planning for unforgettable experiences and seamless bookings.</p>
+   
+</div>
+
+<div class="booking-options">
+    <div class="booking-box">
+        <h5>Destination Booking</h5>
+        <p>Choose your next adventure with ease.</p>
+        <a href="/explore" class="btn btn-outline-success"> 🌍 Explore Tours</a>
+        
+    </div>
+    <div class="booking-box">
+        <h5>Hotel Booking</h5>
+        <p>Find perfect stays for your getaway.</p>
+        <a href="/booking/hotels" class="btn btn-outline-primary">🏨 Book Hotels</a>
+    </div>
+    <div class="booking-box">
+        <h5>Ride Services</h5>
+        <p>Reliable cars and drivers for your journey.</p>
+        <a href="/booking/travel" class="btn btn-outline-warning">🚕 Get Your Ride</a>
+        
+    </div>
+</div>
+
+
+<div class="info-section">
+    <h2 class="section-title">Your Journey Begins with Us</h2>
+    <div class="info-columns">
+        <div class="info-column">
+            <h5><strong>Explore the World Together</strong></h5>
+            <p>At Lets Travel, we help you book destinations, accommodations, and arrange reliable transport for a seamless travel experience.</p>
+        </div>
+        <div class="info-column">
+            <h5><strong>Travel Made Easy</strong></h5>
+            <p>We simplify travel by helping you discover new places, book perfect hotels, and plan a stress-free trip with dependable rides.</p>
+        </div>
+    </div>
+    <div class="mt-4">
+       
+    </div>
+</div>
+
+
