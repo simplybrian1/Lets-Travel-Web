@@ -1,0 +1,142 @@
+﻿@page "/admin/bookings/tours"
+@inject HttpClient Http
+@inject IJSRuntime JS
+
+<h2 class="text-2xl font-bold mb-6">🧳 Tour Bookings (Admin)</h2>
+
+@if (isLoading)
+{
+    <p>Loading bookings...</p>
+}
+else if (tourBookings == null || !tourBookings.Any())
+{
+    <p class="text-gray-500">No tour bookings found.</p>
+}
+else
+{
+    <table class="table-auto w-full border-collapse border border-gray-300">
+        <thead class="bg-gray-100">
+            <tr>
+                <th class="border px-3 py-2">#</th>
+                <th class="border px-3 py-2">Tourist</th>
+                <th class="border px-3 py-2">Tour</th>
+                <th class="border px-3 py-2">Adults</th>
+                <th class="border px-3 py-2">Children</th>
+                <th class="border px-3 py-2">Total</th>
+                <th class="border px-3 py-2">Travel Date</th>
+                <th class="border px-3 py-2">Status</th>
+                <th class="border px-3 py-2">Action</th>
+                <th class="border px-3 py-2">Booked At</th>
+            </tr>
+        </thead>
+        <tbody>
+            @foreach (var booking in tourBookings)
+            {
+                <tr>
+                    <td class="border px-3 py-2">@booking.TourBookingId</td>
+                    <td class="border px-3 py-2">@booking.TouristName</td>
+                    <td class="border px-3 py-2">@booking.TourName</td>
+                    <td class="border px-3 py-2">@booking.Adults</td>
+                    <td class="border px-3 py-2">@booking.Children</td>
+                    <td class="border px-3 py-2">@booking.BillingPrice.ToString("C")</td>
+                    <td class="border px-3 py-2">@booking.TimeOfTravel.ToShortDateString()</td>
+                    <td class="border px-3 py-2">@booking.Status</td>
+                    <td class="border px-3 py-2">
+                        @if (booking.Status == "Pending")
+                        {
+                            <div class="space-y-1">
+                                <textarea class="w-full border rounded p-1"
+                                          @bind="booking.ActionNotes"
+                                          placeholder="Admin notes..."></textarea>
+                                <button class="bg-green-600 text-white px-2 py-1 rounded"
+                                        @onclick="@(() => HandleAction(booking, "Confirmed"))">
+                                    ✅ Confirm Trip
+                                </button>
+                                <button class="bg-red-600 text-white px-2 py-1 rounded"
+                                        @onclick="@(() => HandleAction(booking, "Cancelled"))">
+                                    ❌ Cancel Trip
+                                </button>
+                            </div>
+                        }
+                        else
+                        {
+                            <span class="text-sm text-gray-500">Handled</span>
+                        }
+                    </td>
+                    <td class="border px-3 py-2">@booking.CreatedAt.ToString("g")</td>
+                </tr>
+            }
+        </tbody>
+    </table>
+}
+
+@code {
+    private bool isLoading = true;
+    private List<TourBookingAdminModel> tourBookings = new();
+
+    protected override async Task OnInitializedAsync()
+    {
+        try
+        {
+            var result = await Http.GetFromJsonAsync<ApiResult<List<TourBookingAdminModel>>>("/api/admin/tourbookings/list");
+            if (result?.Success == true)
+                tourBookings = result.Data ?? new();
+        }
+        catch (Exception ex)
+        {
+            Console.Error.WriteLine("❌ Error loading tour bookings: " + ex.Message);
+        }
+
+        isLoading = false;
+    }
+
+    private async Task HandleAction(TourBookingAdminModel booking, string action)
+    {
+        var request = new
+        {
+            TourBookingId = booking.TourBookingId,
+            ActionTaken = action,
+            ActionById = 1, // TODO: use actual Admin ID
+            ActionByRole = "Admin",
+            ActionNotes = booking.ActionNotes ?? ""
+        };
+
+        var res = await Http.PostAsJsonAsync("/api/admin/tourbookings/act", request);
+        var result = await res.Content.ReadFromJsonAsync<ApiResult<string>>();
+
+        if (result?.Success == true)
+        {
+            booking.Status = action; // update UI
+            await JS.InvokeVoidAsync("alert", result?.Message ?? "✅ Booking updated!");
+            StateHasChanged();
+        }
+        else
+        {
+            await JS.InvokeVoidAsync("alert", result?.Message ?? "❌ Action failed.");
+        }
+    }
+
+    public class TourBookingAdminModel
+    {
+        public int TourBookingId { get; set; }
+        public int BookingId { get; set; }
+        public string TouristName { get; set; } = "";
+        public string TourName { get; set; } = "";
+        public int Adults { get; set; }
+        public int Children { get; set; }
+        public decimal BillingPrice { get; set; }
+        public DateTime TimeOfTravel { get; set; }
+        public string Status { get; set; } = "";
+        public string? Notes { get; set; }
+        public DateTime CreatedAt { get; set; }
+
+        public string? ActionNotes { get; set; }
+    }
+
+    public class ApiResult<T>
+    {
+        public bool Success { get; set; }
+        public string? Message { get; set; }
+        public T? Data { get; set; }
+    }
+}

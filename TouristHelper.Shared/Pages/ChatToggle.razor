@@ -1,0 +1,202 @@
+﻿@page "/chat"
+@using TouristHelper.Shared.Services
+@inject ChatService ChatService
+@inject IJSRuntime JS
+
+<PageTitle>Live Chat - Let's Travel</PageTitle>
+
+<style>
+    .chat-page {
+        background: linear-gradient(135deg, #e0f7fa, #fce4ec);
+        min-height: 100vh;
+        padding: 2rem;
+        font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    }
+
+    .chat-wrapper {
+        display: flex;
+        flex-direction: column;
+        height: 85vh;
+        max-width: 800px;
+        margin: 0 auto;
+        background-color: white;
+        border-radius: 12px;
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+    }
+
+    .chat-header {
+        padding: 1rem;
+        font-size: 1.8rem;
+        font-weight: bold;
+        color: white;
+        text-align: center;
+        background: linear-gradient(to right, #007bff, #00c6ff);
+        border-top-left-radius: 12px;
+        border-top-right-radius: 12px;
+    }
+
+    .chat-messages {
+        flex: 1;
+        padding: 1rem;
+        overflow-y: auto;
+        background-color: #f0f2f5;
+        display: flex;
+        flex-direction: column;
+    }
+
+    .chat-input {
+        display: flex;
+        padding: 1rem;
+        border-top: 1px solid #ddd;
+        background-color: #fafafa;
+    }
+
+        .chat-input input {
+            flex: 1;
+            padding: 0.75rem;
+            border-radius: 20px;
+            border: 1px solid #ccc;
+            margin-right: 0.5rem;
+        }
+
+        .chat-input button {
+            padding: 0.75rem 1rem;
+            border-radius: 20px;
+            background-color: #007bff;
+            color: white;
+            border: none;
+        }
+
+    .message {
+        max-width: 70%;
+        margin-bottom: 0.5rem;
+        padding: 0.75rem 1rem;
+        border-radius: 20px;
+        font-size: 0.95rem;
+        line-height: 1.4;
+        word-wrap: break-word;
+    }
+
+    .me {
+        background-color: #dcf8c6;
+        align-self: flex-end;
+    }
+
+    .them {
+        background-color: #ffffff;
+        align-self: flex-start;
+        border: 1px solid #e0e0e0;
+    }
+
+    .chat-messages::-webkit-scrollbar {
+        width: 6px;
+    }
+
+    .chat-messages::-webkit-scrollbar-thumb {
+        background-color: #ccc;
+        border-radius: 6px;
+    }
+</style>
+
+<div class="chat-page">
+    @if (string.IsNullOrEmpty(SenderId))
+    {
+        <p class="text-center text-red-600 font-semibold mt-10">You must be logged in to use chat.</p>
+    }
+    else
+    {
+        <div class="chat-wrapper">
+            <div class="chat-header">
+                💬 Messaging - Secretary
+            </div>
+
+            <div class="chat-messages" @ref="MessagesContainer">
+                @foreach (var msg in messages)
+                {
+                    var isMe = msg.SenderId == SenderId;
+                    var messageClass = isMe ? "message me" : "message them";
+
+                    <div class="@messageClass">@msg.Text</div>
+                }
+            </div>
+
+            <div class="chat-input">
+                <input @bind="currentMessage" @bind:event="oninput" placeholder="Type a message..." />
+                <button @onclick="SendMessage">Send</button>
+            </div>
+        </div>
+    }
+</div>
+@code {
+    private string SenderId = "";
+    private string SenderName = "";
+    private string ReceiverId = "Secretary"; // Can be made dynamic
+    private string SenderRole = "Tourist";
+
+    private string currentMessage = "";
+    private List<ChatMessage> messages = new();
+    private ElementReference MessagesContainer;
+
+    public class ChatMessage
+    {
+        public string SenderId { get; set; } = "";
+        public string SenderRole { get; set; } = "";
+        public string Text { get; set; } = "";
+    }
+
+    protected override async Task OnInitializedAsync()
+    {
+        try
+        {
+            SenderId = await JS.InvokeAsync<string>("localStorage.getItem", "tourist_id");
+            SenderName = await JS.InvokeAsync<string>("localStorage.getItem", "tourist_name");
+
+            if (!string.IsNullOrWhiteSpace(SenderId))
+            {
+                await ChatService.StartAsync(SenderId);
+
+                ChatService.OnMessageReceived += async (role, sender, msg) =>
+                {
+                    messages.Add(new ChatMessage
+                    {
+                        SenderId = sender,
+                        SenderRole = role,
+                        Text = msg
+                    });
+
+                    await InvokeAsync(StateHasChanged);
+                    await ScrollToBottom();
+                };
+            }
+        }
+        catch
+        {
+            SenderId = "";
+            SenderName = "";
+        }
+    }
+
+    private async Task SendMessage()
+    {
+        if (!string.IsNullOrWhiteSpace(currentMessage))
+        {
+            await ChatService.SendMessage(SenderRole, SenderId, ReceiverId, currentMessage);
+
+            messages.Add(new ChatMessage
+            {
+                SenderId = SenderId,
+                SenderRole = SenderRole,
+                Text = currentMessage
+            });
+
+            currentMessage = "";
+            await ScrollToBottom();
+        }
+    }
+
+    private async Task ScrollToBottom()
+    {
+        await Task.Delay(50);
+        await JS.InvokeVoidAsync("blazorScrollToBottom", MessagesContainer);
+    }
+}

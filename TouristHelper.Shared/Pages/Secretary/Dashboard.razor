@@ -1,0 +1,143 @@
+﻿@page "/secretary/dashboard"
+@layout SecretaryLayout
+@inject HttpClient Http
+
+<style>
+    .dashboard-container {
+        padding: 2rem;
+        font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        color: #1f2937;
+        background-color: #f9fafb;
+    }
+
+    .dashboard-header {
+        border-bottom: 2px solid #e5e7eb;
+        margin-bottom: 2rem;
+        padding-bottom: 1rem;
+    }
+
+        .dashboard-header h1 {
+            font-size: 2.5rem;
+            font-weight: bold;
+            color: #1d4ed8;
+        }
+
+        .dashboard-header p {
+            color: #6b7280;
+            margin-top: 0.5rem;
+            font-size: 1rem;
+        }
+
+    .dashboard-grid {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 2rem;
+    }
+
+    .card {
+        flex: 1 1 300px;
+        background-color: #ffffff;
+        padding: 1.5rem;
+        border: 1px solid #c7d2fe;
+        border-radius: 12px;
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
+        transition: box-shadow 0.3s ease;
+    }
+
+        .card:hover {
+            box-shadow: 0 6px 18px rgba(0, 0, 0, 0.1);
+        }
+
+        .card h2 {
+            font-size: 1.25rem;
+            color: #1e3a8a;
+            margin-bottom: 0.75rem;
+        }
+
+        .card p {
+            font-size: 0.9rem;
+            color: #4b5563;
+            margin-bottom: 1rem;
+        }
+
+        .card ul {
+            padding-left: 1rem;
+            font-size: 0.9rem;
+            color: #374151;
+        }
+
+            .card ul li {
+                margin-bottom: 0.5rem;
+            }
+
+    .loading-message {
+        font-style: italic;
+        color: #6b7280;
+    }
+</style>
+
+<div class="dashboard-container">
+    <div class="dashboard-header">
+        <h1>📊 Admin Dashboard</h1>
+        <p>Comprehensive tools to manage bookings, monitor performance, and streamline secretary operations.</p>
+    </div>
+
+    @if (loading)
+    {
+        <p class="loading-message">⏳ Loading dashboard data...</p>
+    }
+    else
+    {
+        <div class="dashboard-grid">
+            <!-- Stats Overview -->
+            <div class="card">
+                <h2>📈 Booking Statistics</h2>
+                <p>Monitor KPIs and track real-time activity across services.</p>
+                <ul>
+                    <li>✅ <strong>Bookings Today:</strong> @summary.bookingsToday</li>
+                    <li>🏨 <strong>Upcoming Hotel Check-ins:</strong> @summary.upcomingHotels</li>
+                    <li>🗺️ <strong>Upcoming Tours:</strong> @summary.upcomingTours</li>
+                    <li>🚗 <strong>Upcoming Rides:</strong> @summary.upcomingRides</li>
+                </ul>
+            </div>
+            <ChatBox SenderRole="Secretary" SenderId="sec-123" ReceiverId="tourist-456" />
+
+            <!-- Real-Time Alerts -->
+            <div class="card">
+                <h2>🔔 Real-Time Alerts</h2>
+                <p>Stay informed of new activities and client engagement.</p>
+                <ul>
+                    <li>👥 <strong>Active Tourists:</strong> @summary.activeTourists</li>
+                </ul>
+            </div>
+        </div>
+    }
+</div>
+
+@code {
+    private bool loading = true;
+
+    private class SummaryData
+    {
+        public int bookingsToday { get; set; }
+        public int upcomingHotels { get; set; }
+        public int upcomingTours { get; set; }
+        public int upcomingRides { get; set; }
+        public int activeTourists { get; set; }
+    }
+
+    private SummaryData summary = new();
+
+    protected override async Task OnInitializedAsync()
+    {
+        try
+        {
+            summary = await Http.GetFromJsonAsync<SummaryData>("/api/secretary/dashboard-summary");
+        }
+        catch
+        {
+            // Optional: log or handle error
+        }
+        loading = false;
+    }
+}

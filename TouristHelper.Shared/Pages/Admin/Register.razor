@@ -1,0 +1,76 @@
+﻿@page "/admin/register"
+@inject HttpClient Http
+@inject NavigationManager Nav
+@inject IJSRuntime JS
+
+<h2 class="text-2xl font-bold mb-4">Admin Registration</h2>
+
+@if (!string.IsNullOrWhiteSpace(ResponseMessage))
+{
+    <p class="@((RegistrationSuccess ? "text-green-600" : "text-red-600"))">@ResponseMessage</p>
+}
+
+<div class="space-y-4 max-w-md">
+    <input @bind="FullName" placeholder="Full Name" class="input w-full" />
+    <input @bind="Email" placeholder="Email" class="input w-full" />
+    <input @bind="PhoneNumber" placeholder="Phone Number" class="input w-full" />
+    <input @bind="Password" type="password" placeholder="Password" class="input w-full" />
+    <label class="flex items-center space-x-2">
+        <input type="checkbox" @bind="IsSuperAdmin" />
+        <span>Super Admin</span>
+    </label>
+    <button @onclick="RegisterAdmin" class="btn btn-primary">Register</button>
+</div>
+
+@code {
+    private string FullName = "";
+    private string Email = "";
+    private string PhoneNumber = "";
+    private string Password = "";
+    private bool IsSuperAdmin = false;
+
+    private string ResponseMessage = "";
+    private bool RegistrationSuccess = false;
+
+    private async Task RegisterAdmin()
+    {
+        ResponseMessage = "";
+
+        var payload = new Dictionary<string, string>
+        {
+            { "FullName", FullName },
+            { "Email", Email },
+            { "Password", Password },
+            { "PhoneNumber", PhoneNumber },
+            { "IsSuperAdmin", IsSuperAdmin ? "1" : "0" }
+        };
+
+        try
+        {
+            var response = await Http.PostAsJsonAsync("api/admin/register", payload);
+            var result = await response.Content.ReadFromJsonAsync<RegisterResponse>();
+
+            RegistrationSuccess = result?.success == true;
+            ResponseMessage = result?.message ?? "Unknown response";
+
+            if (RegistrationSuccess)
+            {
+                await Task.Delay(2000);
+                Nav.NavigateTo("/admin/login");
+            }
+        }
+        catch (Exception ex)
+        {
+            ResponseMessage = $"Registration failed: {ex.Message}";
+            RegistrationSuccess = false;
+        }
+    }
+
+    private class RegisterResponse
+    {
+        public bool success { get; set; }
+        public int code { get; set; }
+        public string message { get; set; }
+        public int? admin_id { get; set; }
+    }
+}

@@ -1,0 +1,107 @@
+﻿@page "/register"
+@using System.Net.Http
+
+@inject HttpClient Http
+@using System.Net.Http.Json
+
+<PageTitle>Tourist Registration</PageTitle>
+
+<h3 class="text-2xl font-semibold mb-4">Create an Account</h3>
+
+@if (!string.IsNullOrEmpty(Message))
+{
+    <div class="p-3 mb-4 rounded text-white" style="background-color:@(IsSuccess ? "green" : "red")">
+        @Message
+    </div>
+}
+
+<div class="space-y-4 max-w-md">
+    <InputText class="w-full border p-2 rounded" @bind-Value="Tourist.FullName" placeholder="Full Name" />
+    <InputText class="w-full border p-2 rounded" @bind-Value="Tourist.Email" placeholder="Email" />
+    <InputText class="w-full border p-2 rounded" @bind-Value="Tourist.PhoneNumber" placeholder="Phone Number" />
+    <InputText id="passwordInput" class="w-full border p-2 rounded" @bind-Value="Tourist.Password" type="password" placeholder="Password" />
+    <InputText class="w-full border p-2 rounded" @bind-Value="Tourist.ProfilePicUrl" placeholder="Profile Picture URL (optional)" />
+
+    <button class="bg-blue-600 text-white px-4 py-2 rounded" @onclick="RegisterTourist" disabled="@IsSubmitting">
+        @if (IsSubmitting)
+        {
+            <span>Registering...</span>
+        }
+        else
+        {
+            <span>Register</span>
+        }
+    </button>
+</div>
+
+@code {
+    private TouristDto Tourist = new TouristDto();
+    private string Message = string.Empty;
+    private bool IsSuccess = false;
+    private bool IsSubmitting = false;
+
+    [Inject] private IJSRuntime JS { get; set; } = default!;
+
+    private async Task RegisterTourist()
+    {
+        IsSubmitting = true;
+        Message = string.Empty;
+
+       
+
+        try
+        {
+            var payload = new Dictionary<string, string>
+            {
+                ["FullName"] = Tourist.FullName ?? "",
+                ["Email"] = Tourist.Email ?? "",
+                ["PhoneNumber"] = Tourist.PhoneNumber ?? "",
+                ["Password"] = Tourist.Password ?? "",  // ✅ Correct key for raw password
+                ["ProfilePicUrl"] = Tourist.ProfilePicUrl ?? ""
+            };
+
+            var response = await Http.PostAsJsonAsync("api/tourist/register", payload);
+
+            if (response.IsSuccessStatusCode)
+            {
+                var result = await response.Content.ReadFromJsonAsync<ApiResponse>();
+                if (result != null)
+                {
+                    IsSuccess = result.success;
+                    Message = result.message;
+                }
+            }
+            else
+            {
+                var result = await response.Content.ReadFromJsonAsync<ApiResponse>();
+                Message = result?.message ?? "Failed to register.";
+                IsSuccess = false;
+            }
+        }
+        catch (Exception ex)
+        {
+            Message = $"Error: {ex.Message}";
+            IsSuccess = false;
+        }
+
+        IsSubmitting = false;
+    }
+
+
+    private class TouristDto
+    {
+        public string? FullName { get; set; }
+        public string? Email { get; set; }
+        public string? PhoneNumber { get; set; }
+        public string? Password { get; set; }
+        public string? ProfilePicUrl { get; set; }
+    }
+
+    private class ApiResponse
+    {
+        public bool success { get; set; }
+        public int code { get; set; }
+        public string message { get; set; } = "";
+        public int? tourist_id { get; set; }
+    }
+}

@@ -1,0 +1,357 @@
+﻿@page "/profile"
+@using System.Net.Http.Json
+@inject HttpClient Http
+@inject NavigationManager Nav
+@using TouristHelper.Shared.Dto
+@inject IJSRuntime JS
+
+<PageTitle>My Profile</PageTitle>
+
+<style>
+    .profile-wrapper {
+        max-width: 1200px;
+        margin: 2rem auto;
+        padding: 0 1rem;
+    }
+
+    .profile-section {
+        background: #ffffff;
+        border-radius: 12px;
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.04);
+        padding: 2rem;
+        margin-bottom: 2rem;
+    }
+
+    .profile-section h2 {
+        font-size: 1.5rem;
+        font-weight: 700;
+        color: #0f766e;
+        margin-bottom: 1rem;
+    }
+
+    .profile-section p {
+        margin: 0.2rem 0;
+    }
+
+    table {
+        width: 100%;
+        border-collapse: collapse;
+    }
+
+    th, td {
+        text-align: left;
+        padding: 0.75rem;
+    }
+
+    thead {
+        background: #f3f4f6; /* gray-100 */
+    }
+
+    tbody tr:nth-child(even) {
+        background: #f9fafb; /* gray-50 */
+    }
+
+    tbody tr:hover {
+        background: #f1f5f9; /* gray-100 hover */
+    }
+
+    th {
+        font-weight: 600;
+        font-size: 0.95rem;
+        color: #374151; /* gray-700 */
+    }
+
+    td {
+        font-size: 0.9rem;
+        color: #374151;
+    }
+
+    .status-active {
+        color: #10b981; /* green-500 */
+        font-weight: 600;
+    }
+
+    .status-inactive {
+        color: #ef4444; /* red-500 */
+        font-weight: 600;
+    }
+
+    .feedback-list li {
+        margin-bottom: 1rem;
+        background: #f9fafb;
+        border-radius: 8px;
+        padding: 1rem;
+    }
+
+   
+
+        thead tr {
+            display: none;
+        }
+
+        tbody tr {
+            margin-bottom: 1rem;
+            border: 1px solid #e5e7eb; /* gray-200 */
+            border-radius: 8px;
+            padding: 1rem;
+            background: #ffffff;
+        }
+
+        td {
+            padding: 0.5rem 0;
+        }
+
+        td:before {
+            content: attr(data-label);
+            font-weight: 600;
+            display: block;
+            color: #6b7280; /* gray-500 */
+        }
+    }
+</style>
+
+<div class="profile-wrapper">
+    <h1 class="text-3xl font-bold mb-6 text-gray-800">👤 My Profile</h1>
+
+    @if (isLoading)
+    {
+        <p>Loading your dashboard...</p>
+    }
+    else if (hasError)
+    {
+        <p class="text-red-500">Failed to load profile. Please try again.</p>
+    }
+    else
+    {
+        <div class="profile-section">
+            <h2>Personal Info</h2>
+            <p><strong>Name:</strong> @profile?.FullName</p>
+            <p><strong>Email:</strong> @profile?.Email</p>
+            <p><strong>Phone:</strong> @profile?.PhoneNumber</p>
+            <p><strong>Account Created:</strong> @profile?.AccountCreated.ToString("yyyy-MM-dd")</p>
+            <p><strong>Status:</strong>
+                <span class="@((profile?.IsActive == true) ? "status-active" : "status-inactive")">
+                    @(profile?.IsActive == true ? "Active ✅" : "Inactive ❌")
+                </span>
+            </p>
+        </div>
+
+        <div class="profile-section">
+            <h2>🏨 Hotel Bookings</h2>
+            @if (hotelBookings?.Any() == true)
+            {
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Hotel</th>
+                            <th>Room</th>
+                            <th>Check-In</th>
+                            <th>Check-Out</th>
+                            <th>Status</th>
+                            <th>Amount</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @foreach (var b in hotelBookings)
+                        {
+                            <tr>
+                                <td data-label="Hotel">@b.HotelName</td>
+                                <td data-label="Room">@b.RoomType</td>
+                                <td data-label="Check-In">@b.CheckIn.ToShortDateString()</td>
+                                <td data-label="Check-Out">@b.CheckOut.ToShortDateString()</td>
+                                <td data-label="Status">@b.BookingStatus</td>
+                                <td data-label="Amount">@b.TotalAmount.ToString("C")</td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            }
+            else
+            {
+                <p class="text-gray-500">No hotel bookings yet.</p>
+            }
+        </div>
+
+        <div class="profile-section">
+            <h2>🌍 Tour Bookings</h2>
+            @if (tourBookings?.Any() == true)
+            {
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Tour</th>
+                            <th>Travel Date</th>
+                            <th>Adults</th>
+                            <th>Children</th>
+                            <th>Status</th>
+                            <th>Price</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @foreach (var t in tourBookings)
+                        {
+                            <tr>
+                                <td data-label="Tour">@t.TourName</td>
+                                <td data-label="Travel Date">@t.TravelDate.ToShortDateString()</td>
+                                <td data-label="Adults">@t.Adults</td>
+                                <td data-label="Children">@t.Children</td>
+                                <td data-label="Status">@t.BookingStatus</td>
+                                <td data-label="Price">@t.TourPrice.ToString("C")</td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            }
+            else
+            {
+                <p class="text-gray-500">No tour bookings yet.</p>
+            }
+        </div>
+
+        <div class="profile-section">
+            <h2>🚗 Ride Bookings</h2>
+            @if (rideBookings?.Any() == true)
+            {
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Car</th>
+                            <th>Driver</th>
+                            <th>Pickup</th>
+                            <th>Dropoff</th>
+                            <th>Time</th>
+                            <th>Passengers</th>
+                            <th>Status</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @foreach (var r in rideBookings)
+                        {
+                            <tr>
+                                <td data-label="Car">@r.CarType</td>
+                                <td data-label="Driver">@r.Driver</td>
+                                <td data-label="Pickup">@r.Pickup</td>
+                                <td data-label="Dropoff">@r.Dropoff</td>
+                                <td data-label="Time">@r.PickupTime.ToString("g")</td>
+                                <td data-label="Passengers">@r.Passengers</td>
+                                <td data-label="Status">@r.BookingStatus</td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            }
+            else
+            {
+                <p class="text-gray-500">No rides booked yet.</p>
+            }
+        </div>
+
+        <div class="profile-section">
+            <h2>💳 Payments</h2>
+            @if (payments?.Any() == true)
+            {
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Booking ID</th>
+                            <th>Method</th>
+                            <th>Status</th>
+                            <th>Amount</th>
+                            <th>Paid At</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @foreach (var p in payments)
+                        {
+                            <tr>
+                                <td data-label="Booking ID">@p.BookingID</td>
+                                <td data-label="Method">@p.Method</td>
+                                <td data-label="Status">@p.Status</td>
+                                <td data-label="Amount">@p.Amount.ToString("C")</td>
+                                <td data-label="Paid At">@((p.PaidAt.HasValue) ? p.PaidAt.Value.ToString("g") : "-")</td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            }
+            else
+            {
+                <p class="text-gray-500">No payment records yet.</p>
+            }
+        </div>
+
+        <div class="profile-section">
+            <h2>📝 Feedback</h2>
+            @if (feedback?.Any() == true)
+            {
+                <ul class="feedback-list">
+                    @foreach (var f in feedback)
+                    {
+                        <li>
+                            <strong>Booking:</strong> @f.BookingID <br />
+                            <strong>Text:</strong> @f.FeedbackText <br />
+                            <strong>Date:</strong> @f.SubmittedAt.ToString("g")
+                        </li>
+                    }
+                </ul>
+            }
+            else
+            {
+                <p class="text-gray-500">No feedback submitted yet.</p>
+            }
+        </div>
+    }
+</div>
+
+@code {
+    private bool isLoading = true;
+    private bool hasError = false;
+
+    private TouristProfileDto? profile;
+    private List<HotelBookingDto>? hotelBookings;
+    private List<TourBookingDto>? tourBookings;
+    private List<RideBookingDto>? rideBookings;
+    private List<PaymentDto>? payments;
+    private List<FeedbackDto>? feedback;
+
+    protected override async Task OnInitializedAsync()
+    {
+        try
+        {
+            var touristIdStr = await JS.InvokeAsync<string>("localStorage.getItem", "tourist_id");
+            if (!int.TryParse(touristIdStr, out int touristId))
+            {
+                await JS.InvokeVoidAsync("alert", "❌ Tourist ID missing or invalid. Please log in again.");
+                Nav.NavigateTo("/login");
+                return;
+            }
+
+            var result = await Http.GetFromJsonAsync<DashboardResponse>($"api/profile/dashboard/{touristId}");
+
+            profile = result?.profile;
+            hotelBookings = result?.hotelBookings;
+            tourBookings = result?.tourBookings;
+            rideBookings = result?.rideBookings;
+            payments = result?.payments;
+            feedback = result?.feedback;
+
+            isLoading = false;
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine(ex);
+            hasError = true;
+            isLoading = false;
+        }
+    }
+
+    private class DashboardResponse
+    {
+        public TouristProfileDto? profile { get; set; }
+        public List<HotelBookingDto>? hotelBookings { get; set; }
+        public List<TourBookingDto>? tourBookings { get; set; }
+        public List<RideBookingDto>? rideBookings { get; set; }
+        public List<PaymentDto>? payments { get; set; }
+        public List<FeedbackDto>? feedback { get; set; }
+    }
+}

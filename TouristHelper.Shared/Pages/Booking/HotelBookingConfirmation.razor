@@ -1,0 +1,123 @@
+﻿@page "/booking/confirmation/hotel/{bookingId:int}"
+@inject NavigationManager Nav
+
+<style>
+    .confirmation-wrapper {
+        max-width: 600px;
+        margin: 3rem auto;
+        padding: 2rem;
+        background: #ffffff;
+        border-radius: 12px;
+        box-shadow: 0 8px 24px rgba(0, 0, 0, 0.05);
+        border: 1px solid #d1fae5; /* green-200 */
+    }
+
+    .confirmation-header {
+        font-size: 2rem;
+        font-weight: 700;
+        color: #047857; /* emerald-700 */
+        text-align: center;
+        margin-bottom: 1.5rem;
+    }
+
+    .confirmation-text {
+        font-size: 1rem;
+        color: #374151; /* gray-700 */
+        margin-bottom: 1rem;
+        line-height: 1.6;
+        text-align: center;
+    }
+
+    .confirmation-details {
+        background: #ecfdf5; /* emerald-50 */
+        border: 1px solid #a7f3d0; /* emerald-200 */
+        padding: 1rem 1.5rem;
+        border-radius: 8px;
+        margin-bottom: 2rem;
+        text-align: center;
+    }
+
+        .confirmation-details p {
+            margin: 0.2rem 0;
+        }
+
+    .confirmation-actions {
+        display: flex;
+        flex-direction: column;
+        gap: 0.75rem;
+    }
+
+   
+
+    }
+
+    .confirmation-actions a {
+        text-align: center;
+        padding: 0.75rem 1.5rem;
+        border-radius: 9999px;
+        font-weight: 500;
+        transition: background 0.2s ease;
+        display: inline-block;
+    }
+
+    .btn-home {
+        background: #2563eb; /* blue-600 */
+        color: #ffffff;
+    }
+
+        .btn-home:hover {
+            background: #1d4ed8; /* blue-700 */
+        }
+
+    .btn-hotels {
+        background: #059669; /* emerald-600 */
+        color: #ffffff;
+    }
+
+        .btn-hotels:hover {
+            background: #047857; /* emerald-700 */
+        }
+
+    .btn-explore {
+        background: #7c3aed; /* purple-600 */
+        color: #ffffff;
+    }
+
+        .btn-explore:hover {
+            background: #6d28d9; /* purple-700 */
+        }
+</style>
+
+<div class="confirmation-wrapper">
+    <h2 class="confirmation-header">✅ Hotel Booking Confirmed!</h2>
+
+    <p class="confirmation-text">
+        Your hotel reservation has been successfully submitted.
+    </p>
+
+    <p class="confirmation-text">
+        A confirmation email and/or WhatsApp message will be sent shortly. You can now explore nearby services or discover more travel options!
+    </p>
+
+    <div class="confirmation-details">
+        <p><strong>📄 Booking ID:</strong> @bookingId</p>
+        <p><strong>📅 Date:</strong> @DateTime.Now.ToString("f")</p>
+    </div>
+
+    <div class="confirmation-actions">
+        <a href="/" class="btn-home">
+            🏠 Return Home
+        </a>
+        <a href="/booking/hotels" class="btn-hotels">
+            🏨 View More Hotels
+        </a>
+        <a href="/explore" class="btn-explore">
+            🌍 Explore Tours
+        </a>
+    </div>
+</div>
+
+@code {
+    [Parameter]
+    public int bookingId { get; set; }
+}

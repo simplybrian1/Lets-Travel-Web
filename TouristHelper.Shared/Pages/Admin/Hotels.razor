@@ -1,0 +1,149 @@
+﻿@page "/admin/bookings/hotels"
+@inject HttpClient Http
+@inject IJSRuntime JS
+
+<h2 class="text-2xl font-bold mb-6">📖 Hotel Bookings (Admin)</h2>
+
+@if (isLoading)
+{
+    <p>Loading bookings...</p>
+}
+else if (bookings == null || bookings.Count == 0)
+{
+    <p class="text-gray-500">No hotel bookings found.</p>
+}
+else
+{
+    <table class="table-auto w-full border-collapse border border-gray-300">
+        <thead class="bg-gray-100">
+            <tr>
+                <th class="border px-3 py-2">#</th>
+                <th class="border px-3 py-2">Tourist</th>
+                <th class="border px-3 py-2">Hotel</th>
+                <th class="border px-3 py-2">Room Type</th>
+                <th class="border px-3 py-2">Accommodation</th>
+                <th class="border px-3 py-2">Rooms</th>
+                <th class="border px-3 py-2">Check-In</th>
+                <th class="border px-3 py-2">Check-Out</th>
+                <th class="border px-3 py-2">Food</th>
+                <th class="border px-3 py-2">Days</th>
+                <th class="border px-3 py-2">Extended</th>
+                <th class="border px-3 py-2">Status</th>
+                <th class="border px-3 py-2">Action</th>
+            </tr>
+        </thead>
+        <tbody>
+            @foreach (var b in bookings)
+            {
+                <tr>
+                    <td class="border px-3 py-2">@b.HotelBookingId</td>
+                    <td class="border px-3 py-2">@b.TouristName</td>
+                    <td class="border px-3 py-2">@b.HotelName</td>
+                    <td class="border px-3 py-2">@b.RoomType</td>
+                    <td class="border px-3 py-2">@b.AccommodationType</td>
+                    <td class="border px-3 py-2">@b.NumberOfRooms</td>
+                    <td class="border px-3 py-2">@b.CheckInDate.ToShortDateString()</td>
+                    <td class="border px-3 py-2">@b.CheckOutDate.ToShortDateString()</td>
+                    <td class="border px-3 py-2">@((b.FoodPlanIncluded ? "✅" : "❌") + $" @ {b.FoodBill:C}")</td>
+                    <td class="border px-3 py-2">@b.NumberOfDays</td>
+                    <td class="border px-3 py-2">@b.ExtendedDays</td>
+                    <td class="border px-3 py-2">@b.Status</td>
+                    <td class="border px-3 py-2">
+                        @if (b.Status == "Pending")
+                        {
+                            <div class="space-y-1">
+                                <textarea class="w-full border rounded p-1" @bind="b.ActionNotes" placeholder="Enter notes"></textarea>
+                                <button class="bg-green-600 text-white px-2 py-1 rounded" @onclick="@(() => HandleAction(b, "Confirmed"))">✅ Confirm</button>
+                                <button class="bg-red-600 text-white px-2 py-1 rounded" @onclick="@(() => HandleAction(b, "Cancelled"))">❌ Cancel</button>
+                            </div>
+                        }
+                        else if (!string.IsNullOrWhiteSpace(b.HandledBy))
+                        {
+                            <div class="text-sm text-gray-500">By: @b.HandledBy</div>
+                        }
+                    </td>
+                </tr>
+            }
+        </tbody>
+    </table>
+}
+
+@code {
+    private bool isLoading = true;
+    private List<HotelBookingAdminViewModel> bookings = new();
+
+    protected override async Task OnInitializedAsync()
+    {
+        try
+        {
+            var response = await Http.GetFromJsonAsync<ApiResult<List<HotelBookingAdminViewModel>>>("/api/admin/hotelbookingadmin/list");
+            var sorted = response?.Data?.OrderByDescending(b => b.Status == "Pending")
+                                      .ThenByDescending(b => b.CreatedAt).ToList();
+            bookings = sorted ?? new List<HotelBookingAdminViewModel>();
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine("Error loading hotel bookings: " + ex.Message);
+            bookings = new();
+        }
+
+        isLoading = false;
+    }
+
+    private async Task HandleAction(HotelBookingAdminViewModel booking, string action)
+    {
+        var request = new
+        {
+            HotelBookingId = booking.HotelBookingId,
+            ActionTaken = action,
+            ActionById = 1, // Replace with actual user id
+            ActionByRole = "Admin",
+            ActionNotes = booking.ActionNotes ?? ""
+        };
+
+        var response = await Http.PostAsJsonAsync("/api/admin/hotelbookingadmin/act", request);
+        var result = await response.Content.ReadFromJsonAsync<ApiResult<string>>();
+
+        if (result?.Success == true)
+        {
+            booking.Status = action;
+            booking.HandledBy = "Admin";
+            StateHasChanged();
+        }
+        else
+        {
+            await JS.InvokeVoidAsync("alert", result?.Message ?? "Action failed.");
+        }
+    }
+
+    public class HotelBookingAdminViewModel
+    {
+        public int HotelBookingId { get; set; }
+        public int BookingId { get; set; }
+        public int TouristId { get; set; }
+        public string TouristName { get; set; } = "";
+        public int HotelId { get; set; }
+        public string HotelName { get; set; } = "";
+        public string RoomType { get; set; } = "";
+        public int NumberOfRooms { get; set; }
+        public string AccommodationType { get; set; } = "";
+        public bool FoodPlanIncluded { get; set; }
+        public decimal FoodBill { get; set; }
+        public int NumberOfDays { get; set; }
+        public int ExtendedDays { get; set; }
+        public DateTime CheckInDate { get; set; }
+        public DateTime CheckOutDate { get; set; }
+        public DateTime CreatedAt { get; set; }
+        public string Status { get; set; } = "";
+
+        public string? HandledBy { get; set; } // Filled only for completed bookings
+        public string? ActionNotes { get; set; } // Temp note input on frontend
+    }
+
+    public class ApiResult<T>
+    {
+        public bool Success { get; set; }
+        public string? Message { get; set; }
+        public T? Data { get; set; }
+    }
+}

@@ -1,0 +1,45 @@
+﻿@page "/booking/confirmation/ride/{BookingId:int}"
+
+@inject NavigationManager Nav
+
+<PageTitle>Ride Booking Confirmation</PageTitle>
+
+@if (BookingId <= 0)
+{
+    <div class="max-w-lg mx-auto p-6 bg-white rounded shadow text-center">
+        <h2 class="text-2xl font-bold mb-4 text-red-600">❌ Invalid Booking</h2>
+        <p class="text-lg mb-6">
+            Sorry, we could not find your booking. Please try again.
+        </p>
+        <button class="bg-blue-600 text-white px-4 py-2 rounded"
+                @onclick="GoHome">
+            Back to Home
+        </button>
+    </div>
+}
+else
+{
+    <div class="max-w-lg mx-auto p-6 bg-white rounded shadow text-center">
+        <h2 class="text-3xl font-bold mb-4 text-green-700">✅ Ride Confirmed!</h2>
+        <p class="text-lg mb-4">
+            Your ride booking ID is <strong>@BookingId</strong>.
+        </p>
+        <p class="text-lg mb-6">
+            Please get ready — your driver will reach your pickup location shortly. 🚗✨
+        </p>
+        <button class="bg-blue-600 text-white px-4 py-2 rounded"
+                @onclick="GoHome">
+            Back to Home
+        </button>
+    </div>
+}
+
+@code {
+    [Parameter]
+    public int BookingId { get; set; }
+
+    private void GoHome()
+    {
+        Nav.NavigateTo("/");
+    }
+}

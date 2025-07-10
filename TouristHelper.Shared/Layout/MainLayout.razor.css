@@ -1,0 +1,242 @@
+/* ==== Layout Wrapper ==== */
+.layout-wrapper {
+    display: flex;
+    min-height: 100vh; /* Always at least the viewport height */
+    background: #f9fafb; /* Subtle neutral background */
+    color: #1f2937; /* Gray-800 text */
+    font-family: 'Inter', sans-serif;
+    position: relative;
+    overflow-x: hidden; /* Prevents sidebar overlap scrolling on small screens */
+}
+
+/* ==== Sidebar ==== */
+.sidebar {
+    width: 250px;
+    height: 100vh; /* Always viewport height */
+    flex-shrink: 0;
+    background: #ffffff;
+    border-right: 1px solid #e5e7eb;
+    display: flex;
+    flex-direction: column;
+    position: fixed; /* <<< This fixes it to screen edge */
+    left: 0;
+    top: 0;
+    z-index: 1000;
+    transition: transform 0.3s ease-in-out;
+}
+
+
+/* Sidebar hidden by default on small screens */
+@media (max-width: 768px) {
+    .sidebar {
+        transform: translateX(-100%);
+    }
+
+        .sidebar.open {
+            transform: translateX(0);
+        }
+}
+
+/* ==== Sidebar Header ==== */
+.sidebar-header {
+    flex-shrink: 0;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 1rem;
+    border-bottom: 1px solid #e5e7eb;
+}
+
+.logo {
+    font-weight: 700;
+    color: #0f766e; /* teal-800 */
+    font-size: 1.25rem;
+}
+
+.greeting {
+    margin-bottom: 1rem;
+    font-weight: 500;
+}
+
+/* ==== Nav Links ==== */
+.nav-links {
+    flex-grow: 1;
+    overflow-y: auto; /* <<< Makes sidebar nav scrollable if needed */
+    padding: 1rem;
+}
+
+
+    .nav-links a {
+        margin-bottom: 1rem;
+        color: #374151; /* gray-700 */
+        text-decoration: none;
+        font-weight: 500;
+        transition: color 0.2s ease;
+    }
+
+        .nav-links a:hover {
+            color: #0f766e; /* teal-800 */
+        }
+
+        .nav-links a.logout {
+            color: #dc2626; /* red-600 */
+        }
+
+            .nav-links a.logout:hover {
+                color: #b91c1c; /* red-700 */
+            }
+
+/* ==== Sidebar Toggle Button ==== */
+.sidebar-toggle {
+    display: none;
+    position: absolute;
+    top: 1rem;
+    left: 1rem;
+    background: #0f766e; /* teal-800 */
+    color: #ffffff;
+    border: none;
+    padding: 0.5rem 1rem;
+    border-radius: 4px;
+    cursor: pointer;
+    z-index: 1100;
+}
+
+@media (max-width: 768px) {
+    .sidebar-toggle {
+        display: block;
+    }
+}
+
+/* ==== Main Content ==== */
+/* Main content default for desktop: sidebar always visible */
+.main-content {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    min-height: 100vh;
+    margin-left: 250px;
+    transition: margin-left 0.3s ease;
+}
+
+/* On mobile, default margin is zero */
+@media (max-width: 768px) {
+    .main-content {
+        margin-left: 0;
+    }
+    /* If sidebar is open on mobile, push content right */
+    .layout-wrapper.sidebar-open .main-content {
+        margin-left: 250px;
+    }
+}
+
+
+
+.page-body {
+    flex: 1;
+    padding: 2rem 3rem;
+    overflow-x: hidden;
+}
+
+/* ==== Footer ==== */
+.site-footer {
+    background: #111827;
+    color: #f9fafb;
+    padding: 3rem 2rem;
+}
+
+.footer-content {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 2rem;
+    justify-content: space-between;
+}
+
+.footer-section {
+    flex: 1 1 250px;
+    min-width: 250px;
+}
+
+    .footer-section h4 {
+        font-size: 1.2rem;
+        font-weight: 600;
+        margin-bottom: 0.75rem;
+    }
+
+    .footer-section p,
+    .footer-section label {
+        font-size: 0.9rem;
+        margin: 0.5rem 0;
+    }
+
+    .footer-section input[type="email"] {
+        width: 100%;
+        padding: 0.5rem 0.75rem;
+        border-radius: 6px;
+        border: 1px solid #d1d5db; /* Gray-300 */
+        margin-top: 0.3rem;
+    }
+
+.subscribe-btn {
+    margin-top: 0.75rem;
+    background: #0d9488;
+    color: #fff;
+    border: none;
+    border-radius: 20px;
+    padding: 0.6rem 1.5rem;
+    cursor: pointer;
+    font-weight: 500;
+    transition: background 0.2s ease;
+}
+
+    .subscribe-btn:hover {
+        background: #0f766e;
+    }
+
+.social-icons {
+    margin-top: 1rem;
+    display: flex;
+    gap: 1rem;
+}
+
+    .social-icons a {
+        color: white;
+        font-size: 1.2rem;
+        transition: transform 0.2s ease;
+    }
+
+        .social-icons a:hover {
+            transform: scale(1.1);
+        }
+
+.copyright {
+    margin-top: 1rem;
+    font-size: 0.8rem;
+    opacity: 0.7;
+}
+
+/* ==== Blazor Error UI ==== */
+#blazor-error-ui {
+    background: #fef3c7;
+    color: #78350f;
+    padding: 0.75rem 1rem;
+    position: fixed;
+    bottom: 0;
+    left: 0;
+    width: 100%;
+    z-index: 1200;
+    display: none;
+    box-shadow: 0 -2px 5px rgba(0, 0, 0, 0.1);
+}
+
+    #blazor-error-ui .dismiss {
+        position: absolute;
+        right: 1rem;
+        top: 0.75rem;
+        cursor: pointer;
+    }
+
+    #blazor-error-ui a.reload {
+        color: #92400e;
+        font-weight: bold;
+        margin-left: 0.5rem;
+    }

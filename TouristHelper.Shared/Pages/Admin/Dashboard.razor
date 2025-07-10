@@ -1,0 +1,142 @@
+﻿@page "/admin/dashboard"
+@layout AdminLayout
+
+@inject HttpClient Http
+
+<PageTitle>Admin Dashboard</PageTitle>
+
+<h2 class="text-2xl font-bold mb-4">📊 Admin Dashboard</h2>
+
+@if (isLoading)
+{
+    <p class="text-gray-500">Loading statistics...</p>
+}
+else if (errorMessage != null)
+{
+    <p class="text-red-500">@errorMessage</p>
+}
+else
+{
+    <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-6">
+        <div class="bg-white shadow rounded-xl p-4">
+            <h3 class="text-lg font-semibold">🏨 Hotel Bookings</h3>
+            <p class="text-2xl font-bold">@stats.HotelBookings</p>
+        </div>
+        <div class="bg-white shadow rounded-xl p-4">
+            <h3 class="text-lg font-semibold">🗺️ Tour Bookings</h3>
+            <p class="text-2xl font-bold">@stats.TourBookings</p>
+        </div>
+        <div class="bg-white shadow rounded-xl p-4">
+            <h3 class="text-lg font-semibold">🚗 Ride Bookings</h3>
+            <p class="text-2xl font-bold">@stats.RideBookings</p>
+        </div>
+    </div>
+
+    <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
+        <div class="bg-white shadow rounded-xl p-4">
+            <h3 class="text-lg font-semibold">👤 Recently Registered Tourists</h3>
+            @if (stats.RecentTourists?.Count > 0)
+            {
+                <ul>
+                    @foreach (var t in stats.RecentTourists)
+                    {
+                        <li class="border-b py-1">
+                            <span class="font-medium">@t.FullName</span> — @t.Email
+                            <div class="text-sm text-gray-500">@t.CreatedAt.ToLocalTime().ToString("g")</div>
+                        </li>
+                    }
+                </ul>
+            }
+            else
+            {
+                <p class="text-sm text-gray-500">No recent tourists found.</p>
+            }
+        </div>
+
+        <div class="bg-white shadow rounded-xl p-4">
+            <h3 class="text-lg font-semibold">🧑‍💼 Recently Registered Secretaries</h3>
+            @if (stats.RecentSecretaries?.Count > 0)
+            {
+                <ul>
+                    @foreach (var s in stats.RecentSecretaries)
+                    {
+                        <li class="border-b py-1">
+                            <span class="font-medium">@s.FullName</span> — @s.Email
+                            <div class="text-sm text-gray-500">@s.CreatedAt.ToLocalTime().ToString("g")</div>
+                        </li>
+                    }
+                </ul>
+            }
+            else
+            {
+                <p class="text-sm text-gray-500">No recent secretaries found.</p>
+            }
+        </div>
+    </div>
+
+    <div class="bg-white shadow rounded-xl p-4 mb-6">
+        <h3 class="text-lg font-semibold">⏱️ Audit Logs</h3>
+        <ul class="text-sm text-gray-700">
+            @foreach (var log in stats.AuditLogs)
+            {
+                <li class="border-b py-1">
+                    <span class="text-gray-900 font-medium">@log.Timestamp.ToLocalTime().ToString("g")</span> — @log.ChangeSummary
+                </li>
+            }
+        </ul>
+    </div>
+
+    <div class="bg-white shadow rounded-xl p-4">
+        <h3 class="text-lg font-semibold text-yellow-600">⚠️ Pending Approvals</h3>
+        <p class="text-2xl font-bold">@stats.PendingBookings</p>
+    </div>
+}
+
+@code {
+    private AdminDashboardStats stats = new();
+    private bool isLoading = true;
+    private string? errorMessage;
+
+    protected override async Task OnInitializedAsync()
+    {
+        try
+        {
+            stats = await Http.GetFromJsonAsync<AdminDashboardStats>("/api/admin/stats");
+        }
+        catch (Exception ex)
+        {
+            errorMessage = "Failed to load dashboard: " + ex.Message;
+        }
+        finally
+        {
+            isLoading = false;
+        }
+    }
+
+    public class AdminDashboardStats
+    {
+        public int HotelBookings { get; set; }
+        public int TourBookings { get; set; }
+        public int RideBookings { get; set; }
+        public int PendingBookings { get; set; }
+        public int TotalTourists { get; set; }
+        public int TotalSecretaries { get; set; }
+
+        public List<RecentUser> RecentTourists { get; set; } = new();
+        public List<RecentUser> RecentSecretaries { get; set; } = new();
+        public List<AuditLogEntry> AuditLogs { get; set; } = new();
+    }
+
+    public class RecentUser
+    {
+        public string FullName { get; set; } = "";
+        public string Email { get; set; } = "";
+        public DateTime CreatedAt { get; set; }
+    }
+
+    public class AuditLogEntry
+    {
+        public DateTime Timestamp { get; set; }
+        public string ChangeSummary { get; set; } = "";
+    }
+}

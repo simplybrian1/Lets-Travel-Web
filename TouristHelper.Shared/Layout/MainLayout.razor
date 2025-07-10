@@ -1,0 +1,59 @@
+﻿@inherits LayoutComponentBase
+@using TouristHelper.Shared.Services
+
+<div class="layout-wrapper">
+    <button class="sidebar-toggle" @onclick="ToggleSidebar">
+        ☰ Menu
+    </button>
+
+    <div class="sidebar @(isSidebarOpen ? "open" : "")">
+        <NavMenu />
+    </div>
+
+    <div class="main-content">
+        <main class="page-body">
+            @Body
+        </main>
+
+        <footer class="site-footer">
+            <div class="footer-content">
+                <div class="footer-section">
+                    <h4>Explore</h4>
+                    <p>Your journey starts with us — book today!</p>
+                    <div class="social-icons">
+                        <a href="#"><i class="fab fa-facebook-f"></i></a>
+                        <a href="#"><i class="fab fa-instagram"></i></a>
+                        <a href="#"><i class="fab fa-tiktok"></i></a>
+                    </div>
+                    <p class="copyright">© 2025. All rights reserved.</p>
+                </div>
+                <div class="footer-section">
+                    <h4>Contact</h4>
+                    <p>+1234567890</p>
+                    <p>info@letstravel.com</p>
+                </div>
+                <div class="footer-section">
+                    <h4>Stay Connected</h4>
+                    <label for="emailInput">Your Email Address</label>
+                    <input type="email" id="emailInput" placeholder="Enter your email" />
+                    <button class="subscribe-btn">Book your travel now</button>
+                </div>
+            </div>
+        </footer>
+    </div>
+</div>
+
+<div id="blazor-error-ui" data-nosnippet>
+    An unhandled error has occurred.
+    <a href="." class="reload">Reload</a>
+    <span class="dismiss">🗙</span>
+</div>
+
+@code {
+    private bool isSidebarOpen = false;
+
+    private void ToggleSidebar()
+    {
+        isSidebarOpen = !isSidebarOpen;
+    }
+}
